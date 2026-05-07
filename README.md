@@ -15,3 +15,13 @@ Acesse para testar
   ```bash
     http://127.0.0.1:8000/docs
 ```
+
+Para formatar o código
+  ```bash
+    ruff format .
+```
+
+Corrigir erros de lint 
+  ```bash
+    ruff check --fix .
+```

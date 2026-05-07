@@ -24,7 +24,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
-        pip install ruff mypy pytest # Instala as ferramentas de qualidade
+        pip install ruff mypy pytest
 
     - name: Checar formatação e lint com Ruff
       run: |
