@@ -3,7 +3,11 @@ import os
 from dotenv import load_dotenv
 
 load_dotenv()
+
 postgres_url = os.getenv("DATABASE_URL")
+if not postgres_url:
+    raise ValueError("A variável de ambiente DATABASE_URL não está configurada!")
+
 engine = create_engine(postgres_url, echo=True)
 
 
