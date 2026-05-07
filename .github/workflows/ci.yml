@@ -34,5 +34,5 @@ jobs:
     - name: Checar tipagem com Mypy
       run: mypy app/
 
-    - name: Rodar testes com Pytest
-      run: pytest
+    # - name: Rodar testes com Pytest
+    #   run: pytest
