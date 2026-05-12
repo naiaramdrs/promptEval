@@ -1,6 +1,7 @@
 from sqlmodel import SQLModel, Field
 from typing import Optional
 
+
 class ExecutionResult(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     testcase_id: int = Field(foreign_key="testcase.id")
