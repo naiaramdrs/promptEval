@@ -7,6 +7,6 @@ async def get_model_response(prompt: str, provider: str, model_id: str):
             model=f"{provider}/{model_id}",
             messages=[{"content": prompt, "role": "user"}],
         )
-        return response.choices[0].message.content
+        return response
     except Exception as e:
         raise Exception(f"Erro ao chamar o modelo {model_id}: {str(e)}")
