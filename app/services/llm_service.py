@@ -26,7 +26,7 @@ async def run_experiment(
             prompt, provider, model_id, temperature
         )
 
-        if model_config.id is None:
+        if model_config.id is None or test.id is None:
             raise ValueError("Erro ao recuperar ID do modelo")
 
         result = create_execution_result(
