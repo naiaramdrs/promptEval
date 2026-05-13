@@ -5,7 +5,7 @@ from app.core.database import create_db_and_tables
 from app.api.routes.dataset_routes import router as dataset_router
 from app.api.routes.llm_routes import router as llm_router
 
-os.environ["GEMINI_API_KEY"] = os.getenv("GEMINI_API_KEY")
+os.environ["GEMINI_API_KEY"] = os.getenv("GEMINI_API_KEY", "")
 
 
 @asynccontextmanager

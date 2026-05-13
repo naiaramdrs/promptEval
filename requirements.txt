@@ -9,3 +9,4 @@ mypy
 pytest
 litellm
 python-multipart
+pandas-stubs
