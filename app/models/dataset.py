@@ -5,7 +5,7 @@ from typing import Optional
 class Dataset(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     name: str
-    format: str
+    format_name: str
     number_lines: int
 
 
