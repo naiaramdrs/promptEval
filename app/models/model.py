@@ -6,4 +6,5 @@ class Model(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     name: str
     provider: str
-    temperature: Optional[float] = None
+    temperature: Optional[float] = 0.0
+    prompt: Optional[str] = ""
