@@ -25,7 +25,7 @@ async def run_experiment(
         response_data = await get_model_response(
             prompt, provider, model_id, temperature
         )
-        
+
         if model_config.id is None:
             raise ValueError("Erro ao recuperar ID do modelo")
 
