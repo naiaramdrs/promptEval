@@ -7,3 +7,4 @@ class ExperimentCreate(BaseModel):
     model_id: str
     temperature: float = 0.0
     prompt: str
+    is_deterministic: bool
