@@ -21,7 +21,7 @@ async def run_experiment(
     results = []
 
     for test in test_cases:
-        prompt = f"System: {prompt}\nUser: {test.query}"
+        prompt = f"System: {prompt}\nContext: {test.context}\nUser: {test.query}"
         response_data = await get_model_response(
             prompt, provider, model_id, temperature
         )

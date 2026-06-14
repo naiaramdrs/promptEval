@@ -13,4 +13,5 @@ class TestCase(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     dataset_id: int = Field(foreign_key="dataset.id")
     query: str
+    context: str
     expected_answer: str

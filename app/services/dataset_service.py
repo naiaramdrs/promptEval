@@ -32,6 +32,7 @@ def create_test_case(df: DataFrame, dataset: Dataset, db: Session):
     for _, row in df.iterrows():
         test_case = TestCase(
             query=row["query"],
+            context=row["context"],
             expected_answer=row["expected_answer"],
             dataset_id=dataset.id,
         )
@@ -40,13 +41,13 @@ def create_test_case(df: DataFrame, dataset: Dataset, db: Session):
     db.commit()
 
 
-def get_dataframe(biffer: BytesIO, file_name: str):
+def get_dataframe(buffer: BytesIO, file_name: str):
     format_name = file_name.split(".")[-1].lower()
 
     if format_name == "csv":
-        df = pd.read_csv(biffer)
+        df = pd.read_csv(buffer)
     elif format_name == "json":
-        df = pd.read_json(biffer)
+        df = pd.read_json(buffer)
     else:
         raise ValueError("Formato não suportado")
     return df, format_name

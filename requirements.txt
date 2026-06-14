@@ -11,3 +11,4 @@ litellm
 python-multipart
 pandas-stubs
 scikit-learn
+pandas
