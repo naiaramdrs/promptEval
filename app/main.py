@@ -4,6 +4,7 @@ import os
 from app.core.database import create_db_and_tables
 from app.api.routes.dataset_routes import router as dataset_router
 from app.api.routes.llm_routes import router as llm_router
+from app.api.routes.metrics_routes import router as metrics_router
 
 os.environ["GEMINI_API_KEY"] = os.getenv("GEMINI_API_KEY", "")
 
@@ -20,8 +21,8 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan, title="Minha API com SQLModel")
 
 app.include_router(dataset_router, prefix="/api", tags=["Datasets"])
-
 app.include_router(llm_router, prefix="/api", tags=["LLM"])
+app.include_router(metrics_router, prefix="/api", tags=["Metrics"])
 
 
 @app.get("/")
