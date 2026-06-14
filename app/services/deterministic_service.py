@@ -13,7 +13,9 @@ async def calculate_metrics(results, db: Session):
         model_id = results[0].model_id
         testcase_ids = [res.testcase_id for res in results]
 
-        statement = select(TestCase).where(TestCase.id.in_(testcase_ids))
+        statement = select(TestCase).where(
+            TestCase.id.is_not(None) & TestCase.id.in_(testcase_ids)
+        )
         test_cases = db.exec(statement).all()
         gabarito = {tc.id: tc.expected_answer.strip().lower() for tc in test_cases}
 
