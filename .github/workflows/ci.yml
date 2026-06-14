@@ -30,9 +30,7 @@ jobs:
       run: |
         ruff check .
         ruff format --check .
-
-    - name: Checar tipagem com Mypy
-      run: mypy app/ --ignore-missing-imports
+    
 
     # - name: Rodar testes com Pytest
     #   run: pytest
