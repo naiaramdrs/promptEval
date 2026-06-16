@@ -3,8 +3,9 @@ from pydantic import BaseModel
 
 class ExperimentCreate(BaseModel):
     dataset_id: int
-    provider: str
-    model_id: str
-    temperature: float = 0.0
-    prompt: str
-    is_deterministic: bool
+    name: str
+    evaluation_type: str
+    prompt_content: str
+    credential_id: int
+    model_name: str
+    temperature: float
