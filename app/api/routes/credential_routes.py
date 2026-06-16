@@ -7,6 +7,7 @@ from app.services.credential_service import (
     create_credential,
     get_credential,
     delete_credential,
+    update_credential,
 )
 
 
@@ -14,7 +15,7 @@ router = APIRouter()
 
 
 @router.post("/credentials")
-def create_credential(request: dict, db: Session = Depends(get_session)):
+def create_credentials(request: dict, db: Session = Depends(get_session)):
     name = request.get("name")
     provider = request.get("provider")
     key_json = request.get("key_encrypted")
@@ -33,12 +34,12 @@ def create_credential(request: dict, db: Session = Depends(get_session)):
 
 
 @router.get("/credentials")
-def list_credentials(db: Session = Depends(get_session)):
+def get_credentials(db: Session = Depends(get_session)):
     return list_credentials(db)
 
 
 @router.get("/credentials/{credential_id}")
-def get_credential(credential_id: int, db: Session = Depends(get_session)):
+def get_credential_by_id(credential_id: int, db: Session = Depends(get_session)):
     credential = get_credential(credential_id, db)
     if credential:
         return credential
@@ -46,7 +47,7 @@ def get_credential(credential_id: int, db: Session = Depends(get_session)):
 
 
 @router.delete("/credentials/{credential_id}")
-def delete_credential(credential_id: int, db: Session = Depends(get_session)):
+def delete_credentials(credential_id: int, db: Session = Depends(get_session)):
     success = delete_credential(credential_id, db)
     if success:
         return {"message": "Credential deletada com sucesso", "code": 200}
@@ -54,7 +55,7 @@ def delete_credential(credential_id: int, db: Session = Depends(get_session)):
 
 
 @router.put("/credentials/{credential_id}")
-def update_credential(
+def update_credentials(
     credential_id: int, request: dict, db: Session = Depends(get_session)
 ):
     name = request.get("name")

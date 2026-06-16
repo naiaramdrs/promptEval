@@ -2,7 +2,8 @@ from litellm import acompletion
 from sqlmodel import Session, select
 from app.models.model import Model
 from app.models.dataset import TestCase
-from app.models.execution import ExecutionResult
+from app.models.execution import ExecutionConfig, ExecutionResult
+from app.schemas.experiment_schema import ExperimentCreate
 
 
 async def run_experiment(
@@ -91,3 +92,19 @@ def create_execution_result(
     )
     db.add(result)
     return result
+
+
+def create_execution_config(data: ExperimentCreate, db: Session):
+    execution_config = ExecutionConfig(
+        experiment_id=data.experiment_id,
+        prompt_id=data.prompt_id,
+        credential_id=data.credential_id,
+        model_name=data.model_name,
+        temperature=data.temperature,
+    )
+
+    db.add(execution_config)
+    db.commit()
+    db.refresh(execution_config)
+
+    return execution_config

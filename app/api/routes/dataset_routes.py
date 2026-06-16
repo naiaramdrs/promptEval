@@ -25,7 +25,7 @@ async def upload_dataset(file: UploadFile, db: Session = Depends(get_session)):
 
 
 @router.get("/datasets")
-def list_datasets(db: Session = Depends(get_session)):
+def get_datasets(db: Session = Depends(get_session)):
     return list_datasets(db)
 
 
