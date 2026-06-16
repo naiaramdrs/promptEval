@@ -10,7 +10,7 @@ class Dataset(SQLModel, table=True):
 
 class TestCase(SQLModel, table=True):
     id: int = Field(primary_key=True)
-    dataset_id: int = Field(foreign_key="dataset.id")
+    dataset_id: int = Field(foreign_key="dataset.id", ondelete="cascade")
     query: str
     context: str
     expected_answer: str
