@@ -9,6 +9,7 @@ class ExecutionConfig(SQLModel, table=True):
     model_name: str
     temperature: float
 
+
 class ExecutionResult(SQLModel, table=True):
     id: int = Field(primary_key=True)
     testcase_id: int = Field(foreign_key="testcase.id")
