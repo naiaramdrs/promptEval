@@ -1,20 +1,35 @@
+import os
+import time
+
 from litellm import acompletion
+from pydantic import json
 from sqlmodel import Session, select
+from app.models.credential import Credential
 from app.models.model import Model
 from app.models.dataset import TestCase
 from app.models.execution import ExecutionConfig, ExecutionResult
 from app.schemas.experiment_schema import ExperimentCreate
+from app.services.credential_service import decrypt_key
 
 
 async def run_experiment(
     dataset_id: int,
-    provider: str,
-    model_id: str,
+    execution_config_id: int,
+    model_name: str,
     temperature: float,
     prompt: str,
+    credential_id: int,
     db: Session,
 ):
-    model_config = create_model(model_id, provider, temperature, prompt, db)
+    credential = db.exec(
+        select(Credential).where(Credential.id == credential_id)
+    ).first()
+    if not credential:
+        raise ValueError(f"Credencial com ID {credential_id} não encontrada.")
+
+    provider = credential.provider
+    name_key = credential.name
+    api_key = decrypt_key(credential.key_encrypted)
 
     statement = select(TestCase).where(TestCase.dataset_id == dataset_id)
     test_cases = db.exec(statement).all()
@@ -22,33 +37,51 @@ async def run_experiment(
     results = []
 
     for test in test_cases:
-        prompt = f"System: {prompt}\nContext: {test.context}\nUser: {test.query}"
+        full_prompt = f"System: {prompt}\nContext: {test.context}\nUser: {test.query}"
+
+        start_time = time.time()
+
         response_data = await get_model_response(
-            prompt, provider, model_id, temperature
+            prompt=full_prompt,
+            provider=provider,
+            model_id=model_name,
+            temperature=temperature,
+            api_key=api_key,
+            name_key=name_key,
         )
 
-        if model_config.id is None or test.id is None:
-            raise ValueError("Erro ao recuperar ID do modelo")
+        end_time = time.time()
+        execution_time_ms = int((end_time - start_time) * 1000)
 
-        result = create_execution_result(
-            model_config.id,
-            response_data.choices[0].message.content,
-            test.id,
-            response_data.usage.prompt_tokens,
-            response_data.usage.completion_tokens,
-            (response_data.usage.prompt_tokens + response_data.usage.completion_tokens),
-            db,
+        result = ExecutionResult(
+            execution_config_id=execution_config_id,
+            testcase_id=test.id,
+            model_response=response_data.choices[0].message.content,
+            prompt_tokens=response_data.usage.prompt_tokens,
+            completion_tokens=response_data.usage.completion_tokens,
+            total_tokens=response_data.usage.total_tokens,
+            execution_time_ms=execution_time_ms,
         )
+
+        db.add(result)
         results.append(result)
 
     db.commit()
-    print(results)
+
+    for r in results:
+        db.refresh(r)
+
     return results
 
 
 async def get_model_response(
-    prompt: str, provider: str, model_id: str, temperature: float
+    prompt: str,
+    provider: str,
+    model_id: str,
+    temperature: float,
+    api_key: str,
 ):
+    read_keys(api_key)
     return await acompletion(
         model=f"{provider}/{model_id}",
         messages=[{"content": prompt, "role": "user"}],
@@ -90,7 +123,7 @@ def create_execution_result(
         completion_tokens=completion_tokens,
         total_tokens=total_tokens,
     )
-    db.add(result)
+
     return result
 
 
@@ -108,3 +141,8 @@ def create_execution_config(data: ExperimentCreate, db: Session):
     db.refresh(execution_config)
 
     return execution_config
+
+
+def read_keys(api_key: json):
+    for key, value in api_key.items():
+        os.environ[key] = os.getenv(value, "")
