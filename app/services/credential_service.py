@@ -1,7 +1,6 @@
 import os
-import sqlalchemy
-from pydantic import json
-from sqlmodel import Session
+import json
+from sqlmodel import Session, select
 from cryptography.fernet import Fernet
 
 from app.models.credential import Credential
@@ -36,7 +35,7 @@ def delete_credential(credential_id: int, db: Session):
 
 
 def list_credentials(db: Session):
-    list_credentials = db.exec(sqlalchemy.select(Credential)).all()
+    list_credentials = db.exec(select(Credential)).all()
     return [response_credential(credential) for credential in list_credentials]
 
 

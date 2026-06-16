@@ -2,7 +2,7 @@ import pandas as pd
 from io import BytesIO
 from pandas import DataFrame
 import sqlalchemy
-from sqlmodel import Session
+from sqlmodel import Session, select
 from app.models.dataset import Dataset, TestCase
 
 
@@ -25,7 +25,7 @@ def delete_dataset(dataset_id: int, db: Session):
 
 
 def list_datasets(db: Session):
-    return db.exec(sqlalchemy.select(Dataset)).all()
+    return db.exec(select(Dataset)).all()
 
 
 def get_dataset(dataset_id: int, db: Session):
