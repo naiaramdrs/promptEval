@@ -2,7 +2,7 @@ from sqlmodel import Session
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 from sqlmodel import select
 from app.models.dataset import TestCase
-from app.models.deterministic_metric import DeterministicMetric
+from app.models.metrics import DeterministicMetric
 
 
 async def calculate_metrics(results, db: Session):
