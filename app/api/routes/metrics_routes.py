@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session
 from app.core.database import get_session
-from app.services.deterministic_service import get_metrics
+from app.services.metrics_service import get_metrics
 
 
 router = APIRouter()
