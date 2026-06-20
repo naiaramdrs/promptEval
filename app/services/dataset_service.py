@@ -89,9 +89,9 @@ def download_dataset(dataset_id: int, file_format: str, db: Session):
                 "expected_answer": testcase.expected_answer,
             }
 
-        model_name = execution_config.model_name.replace("-", "_").replace(".", "_")
-
-        data[tc_id][f"llm_response_{model_name}"] = execution_result.model_response
+        if execution_config:
+            model_name = execution_config.model_name.replace("-", "_").replace(".", "_")
+            data[tc_id][f"llm_response_{model_name}"] = execution_result.model_response
 
     rows = list(data.values())
     buffer, extension = create_download_buffer(rows, file_format)
@@ -104,8 +104,8 @@ def download_dataset(dataset_id: int, file_format: str, db: Session):
 def get_results_with_execution_config(dataset_id: int, db: Session):
     return db.exec(
         select(TestCase, ExecutionResult, ExecutionConfig)
-        .join(ExecutionResult, ExecutionResult.testcase_id == TestCase.id)
-        .join(
+        .outerjoin(ExecutionResult, ExecutionResult.testcase_id == TestCase.id)
+        .outerjoin(
             ExecutionConfig, ExecutionConfig.id == ExecutionResult.execution_config_id
         )
         .where(TestCase.dataset_id == dataset_id)
