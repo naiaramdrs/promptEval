@@ -5,7 +5,7 @@ from app.schemas.experiment_schema import ExperimentCreate
 
 from app.services.experiment_service import create_experiment
 from app.services.llm_service import create_execution_config, run_experiment
-from app.services.deterministic_service import calculate_metrics
+from app.services.metrics_service import calculate_metrics
 from app.services.prompt_service import create_prompt
 
 router = APIRouter()
