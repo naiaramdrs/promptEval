@@ -7,9 +7,11 @@ from app.services.metrics_service import get_metrics
 router = APIRouter()
 
 
-@router.get("/metrics/deterministic/{model_id}")
-async def get_deterministic_metrics(model_id: int, db: Session = Depends(get_session)):
+@router.get("/metrics/{experiment_id}")
+async def get_deterministic_metrics(
+    experiment_id: int, db: Session = Depends(get_session)
+):
     try:
-        return await get_metrics(model_id, db)
+        return await get_metrics(experiment_id, db)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

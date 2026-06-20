@@ -62,7 +62,7 @@ def response_credential(credential: Credential):
 
 def encrypt_key(key: json):
     json_key = json.dumps(key)
-    return cipher.encrypt(json_key.encode())
+    return cipher.encrypt(json_key.encode()).decode()
 
 
 def decrypt_key(key_encrypted: str):
