@@ -46,17 +46,17 @@ def delete_dataset_by_id(dataset_id: int, db: Session = Depends(get_session)):
 
 
 @router.get("/datasets/{dataset_id}/download")
-def download_datasets(dataset_id: int, file_format: str, db: Session = Depends(get_session)):    
+def download_datasets(
+    dataset_id: int, file_format: str, db: Session = Depends(get_session)
+):
     try:
         buffer, filename = download_dataset(dataset_id, file_format, db)
-        media_type = ("text/csv" if file_format == "csv" else "application/json")
+        media_type = "text/csv" if file_format == "csv" else "application/json"
 
         return StreamingResponse(
             buffer,
             media_type=media_type,
-            headers={
-                "Content-Disposition": f'attachment; filename="{filename}"'
-            }
+            headers={"Content-Disposition": f'attachment; filename="{filename}"'},
         )
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))

@@ -71,11 +71,6 @@ def get_dataframe(buffer: BytesIO, file_name: str):
     return df, format_name
 
 
-from sqlmodel import select
-from io import BytesIO
-import pandas as pd
-
-
 def download_dataset(dataset_id: int, file_format: str, db: Session):
     dataset = get_dataset(dataset_id, db)
     if not dataset:
