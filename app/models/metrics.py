@@ -1,11 +1,9 @@
 from sqlmodel import JSON, Column, SQLModel, Field
-from typing import List, Optional
+from typing import Optional
 
 
-class DeterministicMetric(SQLModel, table=True):
+class Metrics(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
-    model_id: int = Field(foreign_key="model.id")
-    accuracy: float
-    labels: List[str] = Field(sa_column=Column(JSON))
-    confusion_matrix: List[List[int]] = Field(sa_column=Column(JSON))
-    report: str | dict = Field(sa_column=Column(JSON))
+    execution_config_id: int = Field(foreign_key="executionconfig.id")
+    metric_type: str
+    details_json: dict = Field(sa_column=Column(JSON))

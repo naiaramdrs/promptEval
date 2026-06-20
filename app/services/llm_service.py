@@ -28,7 +28,6 @@ async def run_experiment(
         raise ValueError(f"Credencial com ID {credential_id} não encontrada.")
 
     provider = credential.provider
-    name_key = credential.name
     api_key = decrypt_key(credential.key_encrypted)
 
     statement = select(TestCase).where(TestCase.dataset_id == dataset_id)
@@ -47,7 +46,6 @@ async def run_experiment(
             model_id=model_name,
             temperature=temperature,
             api_key=api_key,
-            name_key=name_key,
         )
 
         end_time = time.time()
@@ -127,10 +125,12 @@ def create_execution_result(
     return result
 
 
-def create_execution_config(data: ExperimentCreate, db: Session):
+def create_execution_config(
+    data: ExperimentCreate, experiment_id: int, prompt_id: int, db: Session
+):
     execution_config = ExecutionConfig(
-        experiment_id=data.experiment_id,
-        prompt_id=data.prompt_id,
+        experiment_id=experiment_id,
+        prompt_id=prompt_id,
         credential_id=data.credential_id,
         model_name=data.model_name,
         temperature=data.temperature,
@@ -145,4 +145,4 @@ def create_execution_config(data: ExperimentCreate, db: Session):
 
 def read_keys(api_key: json):
     for key, value in api_key.items():
-        os.environ[key] = os.getenv(value, "")
+        os.environ[key] = value
