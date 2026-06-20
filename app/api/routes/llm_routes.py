@@ -5,7 +5,12 @@ from sqlmodel import Session
 from app.core.database import get_session
 from app.schemas.experiment_schema import ExperimentCreate
 
-from app.services.experiment_service import create_experiment
+from app.services.experiment_service import (
+    create_experiment,
+    list_experiments,
+    get_experiment,
+    delete_experiment,
+)
 from app.services.llm_service import create_execution_config, run_experiment
 from app.services.metrics_service import calculate_deterministic_metrics
 from app.services.prompt_service import create_prompt
@@ -50,3 +55,24 @@ async def start_experiment(data: ExperimentCreate, db: Session = Depends(get_ses
         traceback.print_exc()
         print(e)
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/experiments")
+def list_all_experiments(db: Session = Depends(get_session)):
+    return list_experiments(db)
+
+
+@router.get("/experiments/{experiment_id}")
+def get_experiment_by_id(experiment_id: int, db: Session = Depends(get_session)):
+    experiment = get_experiment(experiment_id, db)
+    if experiment:
+        return experiment
+    return {"message": "Experimento não encontrado", "code": 404}
+
+
+@router.delete("/experiments/{experiment_id}")
+def delete_experiment_by_id(experiment_id: int, db: Session = Depends(get_session)):
+    success = delete_experiment(experiment_id, db)
+    if success:
+        return {"message": "Experimento deletado com sucesso", "code": 200}
+    return {"message": "Experimento não encontrado", "code": 404}
