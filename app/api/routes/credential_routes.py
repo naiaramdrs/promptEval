@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends
 from sqlmodel import Session
 from app.core.database import get_session
+from app.schemas.credential_schema import CredentialCreate
 from app.services.credential_service import (
     list_credentials,
     encrypt_key,
@@ -15,17 +16,14 @@ router = APIRouter()
 
 
 @router.post("/credentials")
-def create_credentials(request: dict, db: Session = Depends(get_session)):
-    name = request.get("name")
-    provider = request.get("provider")
-    key_json = request.get("key_encrypted")
-    key_encrypted = encrypt_key(key_json)
-    if not all([name, provider, key_encrypted]):
+def create_credentials(data: CredentialCreate, db: Session = Depends(get_session)):
+    key_encrypted = encrypt_key(data.key)
+    if not all([data.name, data.provider, key_encrypted]):
         return {
             "message": "Campos 'name', 'provider' e 'key_encrypted' são obrigatórios",
             "code": 400,
         }
-    credential = create_credential(name, provider, key_encrypted, db)
+    credential = create_credential(data.name, data.provider, key_encrypted, db)
     return {
         "message": "Credential criada com sucesso",
         "credential": credential,
@@ -56,11 +54,11 @@ def delete_credentials(credential_id: int, db: Session = Depends(get_session)):
 
 @router.put("/credentials/{credential_id}")
 def update_credentials(
-    credential_id: int, request: dict, db: Session = Depends(get_session)
+    credential_id: int, data: CredentialCreate, db: Session = Depends(get_session)
 ):
-    name = request.get("name")
-    provider = request.get("provider")
-    key_json = request.get("key_encrypted")
+    name = data.name
+    provider = data.provider
+    key_json = data.key
     key_encrypted = encrypt_key(key_json)
     if not all([name, provider, key_encrypted]):
         return {

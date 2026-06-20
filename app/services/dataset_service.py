@@ -1,8 +1,11 @@
+import json
+
 import pandas as pd
 from io import BytesIO
 from pandas import DataFrame
 from sqlmodel import Session, select
 from app.models.dataset import Dataset, TestCase
+from app.models.execution import ExecutionConfig, ExecutionResult
 
 
 def create_dataset(name: str, format_name: str, number_lines: int, db: Session):
@@ -66,3 +69,58 @@ def get_dataframe(buffer: BytesIO, file_name: str):
     else:
         raise ValueError("Formato não suportado")
     return df, format_name
+
+
+def download_dataset(dataset_id: int, file_format: str, db: Session):
+    dataset = get_dataset(dataset_id, db)
+    if not dataset:
+        raise ValueError("Dataset não encontrado")
+
+    results = get_results_with_execution_config(dataset_id, db)
+    data = {}
+
+    for testcase, execution_result, execution_config in results:
+        tc_id = testcase.id
+
+        if tc_id not in data:
+            data[tc_id] = {
+                "query": testcase.query,
+                "context": testcase.context,
+                "expected_answer": testcase.expected_answer,
+            }
+
+        if execution_config:
+            model_name = execution_config.model_name.replace("-", "_").replace(".", "_")
+            data[tc_id][f"llm_response_{model_name}"] = execution_result.model_response
+
+    rows = list(data.values())
+    buffer, extension = create_download_buffer(rows, file_format)
+
+    buffer.seek(0)
+
+    return buffer, f"{dataset.name}.{extension}"
+
+
+def get_results_with_execution_config(dataset_id: int, db: Session):
+    return db.exec(
+        select(TestCase, ExecutionResult, ExecutionConfig)
+        .outerjoin(ExecutionResult, ExecutionResult.testcase_id == TestCase.id)
+        .outerjoin(
+            ExecutionConfig, ExecutionConfig.id == ExecutionResult.execution_config_id
+        )
+        .where(TestCase.dataset_id == dataset_id)
+    ).all()
+
+
+def create_download_buffer(rows: list, file_format: str):
+    buffer = BytesIO()
+
+    if file_format == "csv":
+        pd.DataFrame(rows).to_csv(buffer, index=False)
+        extension = "csv"
+    elif file_format == "json":
+        buffer.write(json.dumps(rows, ensure_ascii=False, indent=2).encode("utf-8"))
+        extension = "json"
+    else:
+        raise ValueError("Formato inválido")
+    return buffer, extension
