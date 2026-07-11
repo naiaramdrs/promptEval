@@ -46,15 +46,12 @@ SUPPORTED_PROVIDERS = {
             "anthropic.claude-opus-4",
             "anthropic.claude-sonnet-4",
             "anthropic.claude-3-7-sonnet",
-
             # Amazon Nova
             "amazon.nova-pro-v1:0",
             "amazon.nova-lite-v1:0",
             "amazon.nova-micro-v1:0",
-
             # DeepSeek
             "deepseek.r1-v1:0",
-
             # Llama
             "meta.llama3-3-70b-instruct-v1:0",
             "meta.llama3-2-90b-instruct-v1:0",

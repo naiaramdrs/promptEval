@@ -1,5 +1,10 @@
 from fastapi import APIRouter
-from api.config.providers import get_provider, get_models, get_credential_fields, list_providers
+from api.config.providers import (
+    get_provider,
+    get_models,
+    get_credential_fields,
+    list_providers,
+)
 
 
 router = APIRouter()
