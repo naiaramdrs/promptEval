@@ -3,13 +3,9 @@ from fastapi import FastAPI
 import os
 from app.core.database import create_db_and_tables
 from app.api.routes import (
-    dataset_routes,
-    credential_routes,
-    llm_routes,
-    metrics_routes,
     user_routes,
-    providers_route,
 )
+from app.api.routes import credential_routes, dataset_routes, llm_routes, metrics_routes, providers_route
 
 os.environ["GEMINI_API_KEY"] = os.getenv("GEMINI_API_KEY", "")
 
