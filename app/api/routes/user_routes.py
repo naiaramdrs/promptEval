@@ -19,7 +19,7 @@ router = APIRouter()
 @router.post("/users")
 def create(user: UserCreate, db: Session = Depends(get_session)):
     try:
-        if not validate_email(user.email):
+        if not validate_email(user.email, db):
             return {"message": "Email inválido", "status": 400}
 
         if not validate_password(user.password):
@@ -58,9 +58,8 @@ def list(db: Session = Depends(get_session)):
 @router.put("/users/{user_id}")
 def update(user_id: int, user: UserCreate, db: Session = Depends(get_session)):
     try:
-        user_updated = update_user(
-            user_id, user.name, user.email, user.hashed_password, db
-        )
+        hashed_password = hash_password(user.password)
+        user_updated = update_user(user_id, user.name, user.email, hashed_password, db)
         if user_updated:
             return {
                 "message": "Usuário atualizado com sucesso",
