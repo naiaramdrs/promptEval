@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends
 from sqlmodel import Session
 
+from app.api.utils.validation import hash_password, validate_email, validate_password
 from app.core.database import get_session
 from app.schemas.user_schema import UserCreate
 from app.services.user_service import (
@@ -18,7 +19,16 @@ router = APIRouter()
 @router.post("/users")
 def create(user: UserCreate, db: Session = Depends(get_session)):
     try:
-        user_created = create_user(user.name, user.email, user.hashed_password, db)
+        if not validate_email(user.email):
+            return {"message": "Email inválido", "status": 400}
+
+        if not validate_password(user.password):
+            return {
+                "message": "Senha inválida. A senha deve ter pelo menos 8 caracteres, incluindo letras maiúsculas, minúsculas, números e caracteres especiais.",
+                "status": 400,
+            }
+        hashed_password = hash_password(user.password)
+        user_created = create_user(user.name, user.email, hashed_password, db)
         return {
             "message": "Usuário criado com sucesso",
             "user": user_created,
