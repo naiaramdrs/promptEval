@@ -71,15 +71,3 @@ def get_models(provider: str):
 
 def get_credential_fields(provider: str):
     return SUPPORTED_PROVIDERS[provider]["credential_fields"]
-
-
-def list_providers():
-    return [
-        {
-            "name": name,
-            "display_name": provider["display_name"],
-            "credential_fields": provider["credential_fields"],
-            "models": provider["models"],
-        }
-        for name, provider in SUPPORTED_PROVIDERS.items()
-    ]
