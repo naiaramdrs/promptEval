@@ -1,7 +1,7 @@
 import { type ReactNode, useEffect, useState } from "react";
 import { Menu, Database, KeyRound, History, Play } from "lucide-react";
 import logoWhite from "@/assets/logo-white.svg";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 
 type NavItem = { to: string; label: string; icon: typeof Database };
 
@@ -14,7 +14,7 @@ const NAV: NavItem[] = [
 
 export function AppShell({ children }: { children: ReactNode }) {
   const [expanded, setExpanded] = useState(false);
-  const pathname = window.location.pathname;
+  const { pathname } = useLocation();
 
   // Open by default on desktop, closed on mobile.
   useEffect(() => {

@@ -109,7 +109,7 @@ function RunPage() {
           </p>
         </div>
         <Button variant="outline" onClick={() => navigate({ to: "/app/evaluations" })}>
-          Ver histórico
+          Ver histórico 
         </Button>
       </header>
 
