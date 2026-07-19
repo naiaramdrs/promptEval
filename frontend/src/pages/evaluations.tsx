@@ -1,11 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -15,8 +10,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { loadJSON } from "@/lib/storage";
-import { Download } from "lucide-react";
+import {
+  getExperiments,
+  deleteExperiment,
+  type Experiment,
+} from "@/api/experiments";
+import { downloadDataset } from "../api/datasets";
 
 function csvEscape(v: string) {
   const s = String(v ?? "");
@@ -55,11 +54,16 @@ function downloadCsv(ev: Evaluation) {
       );
     }
   }
-  const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8;" });
+  const blob = new Blob([lines.join("\n")], {
+    type: "text/csv;charset=utf-8;",
+  });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  const safeName = (ev.name || ev.datasetName || "avaliacao").replace(/[^a-z0-9-_]+/gi, "_");
+  const safeName = (ev.name || ev.datasetName || "avaliacao").replace(
+    /[^a-z0-9-_]+/gi,
+    "_",
+  );
   a.download = `${safeName}_${ev.id}.csv`;
   document.body.appendChild(a);
   a.click();
@@ -119,19 +123,15 @@ export type Evaluation = {
 export const STORAGE_KEY = "promptEval.evaluations";
 
 function EvaluationsPage() {
-  const [evals, setEvals] = useState<Evaluation[]>([]);
+  const [experiments, setExperiments] = useState<Experiment[]>([]);
 
   useEffect(() => {
-    // Only load evaluations that use the new (multi-model) shape.
-    const filter = (arr: Evaluation[]) => arr.filter((e) => Array.isArray(e.models));
-    setEvals(filter(loadJSON<Evaluation[]>(STORAGE_KEY, [])));
-    const onStorage = () => setEvals(filter(loadJSON<Evaluation[]>(STORAGE_KEY, [])));
-    window.addEventListener("storage", onStorage);
-    const interval = window.setInterval(onStorage, 1500);
-    return () => {
-      window.removeEventListener("storage", onStorage);
-      window.clearInterval(interval);
+    const fetchExperiments = async () => {
+      const data = await getExperiments();
+      setExperiments(data);
     };
+
+    fetchExperiments();
   }, []);
 
   return (
@@ -139,7 +139,9 @@ function EvaluationsPage() {
       <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
           <h1 className="text-2xl font-bold">Histórico de avaliações</h1>
-          <p className="text-sm text-muted-foreground">Todas as avaliações executadas.</p>
+          <p className="text-sm text-muted-foreground">
+            Todas as avaliações executadas.
+          </p>
         </div>
         <Button asChild className="sm:w-auto">
           <Link to="/app/run">Nova avaliação</Link>
@@ -151,8 +153,10 @@ function EvaluationsPage() {
           <CardTitle>Avaliações</CardTitle>
         </CardHeader>
         <CardContent>
-          {evals.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Nenhuma avaliação realizada ainda.</p>
+          {experiments.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              Nenhuma avaliação realizada ainda.
+            </p>
           ) : (
             <Table>
               <TableHeader>
@@ -160,46 +164,42 @@ function EvaluationsPage() {
                   <TableHead>Data</TableHead>
                   <TableHead>Experimento</TableHead>
                   <TableHead>Dataset</TableHead>
-                  <TableHead>Modelos</TableHead>
                   <TableHead>Tipo</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Ações</TableHead>
+                  <TableHead>Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {evals.map((e) => (
+                {experiments.map((e) => (
                   <TableRow key={e.id}>
-                    <TableCell>{new Date(e.createdAt).toLocaleString()}</TableCell>
-                    <TableCell className="font-medium">{e.name}</TableCell>
-                    <TableCell>{e.datasetName}</TableCell>
-                    <TableCell className="font-mono text-xs">
-                      {(e.models ?? []).map((m) => m.model).join(", ") || "—"}
+                    <TableCell>
+                      {e.created_at
+                        ? new Date(e.created_at).toLocaleDateString("pt-BR")
+                        : "-"}
                     </TableCell>
-                    <TableCell className="text-xs">
-                      {e.evalType === "semantic" ? "Semântica" : "Determinística"}
-                    </TableCell>
-                    <TableCell><StatusBadge status={e.status} /></TableCell>
+
+                    <TableCell>{e.name}</TableCell>
+
+                    <TableCell>{e.dataset_id}</TableCell>
+
+                    <TableCell>{e.evaluation_type}</TableCell>
+
                     <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        {e.status === "completed" ? (
-                          <Button asChild size="sm" variant="outline">
-                            <Link to="/app/dashboard/$evalId" params={{ evalId: e.id }}>
-                              Visualizar dashboard
-                            </Link>
-                          </Button>
-                        ) : (
-                          <Button size="sm" variant="outline" disabled>
-                            Visualizar dashboard
-                          </Button>
-                        )}
+                      <div className="flex justify-start gap-2">
+                        <Button asChild size="sm" variant="outline">
+                          <Link to={`/app/dashboard/${e.id}`}>Dashboard</Link>
+                        </Button>
                         <Button
                           size="sm"
                           variant="outline"
-                          disabled={e.status !== "completed"}
-                          onClick={() => downloadCsv(e)}
-                          title="Baixar CSV com respostas geradas"
+                          onClick={() =>
+                            downloadDataset(
+                              e.dataset_id,
+                              "csv",
+                              `dataset-${e.dataset_id}.csv`,
+                            )
+                          }
                         >
-                          <Download className="mr-1 h-4 w-4" /> CSV
+                          Baixar CSV
                         </Button>
                       </div>
                     </TableCell>
@@ -234,7 +234,9 @@ function StatusBadge({ status }: { status: EvaluationStatus }) {
     className: "bg-muted text-muted-foreground border border-border",
   };
   return (
-    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${s.className}`}>
+    <span
+      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${s.className}`}
+    >
       {s.label}
     </span>
   );

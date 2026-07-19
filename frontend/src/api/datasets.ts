@@ -12,9 +12,9 @@ export const uploadDataset = async (file: File | null) => {
 
   const formData = new FormData();
   if (file) {
-      formData.append("file", file);
+    formData.append("file", file);
   }
-    console.log("FormData entries:", [...formData.entries()]);
+  console.log("FormData entries:", [...formData.entries()]);
 
   const { data } = await api.post("/upload-dataset", formData);
 
@@ -36,18 +36,29 @@ export const deleteDataset = async (id: number) => {
 };
 
 export const downloadDataset = async (
-  id: number,
-  format: "csv" | "json"
+  datasetId: number,
+  format: "csv" | "json",
+  filename: string,
 ) => {
-  const { data } = await api.get(
-    `/datasets/${id}/download`,
-    {
-      params: {
-        file_format: format,
-      },
-      responseType: "blob",
-    }
-  );
+  const { data } = await api.get(`/datasets/${datasetId}/download`, {
+    params: {
+      file_format: format,
+    },
+    responseType: "blob",
+  });
 
-  return data;
+  const blob = new Blob([data]);
+
+  const url = window.URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+
+  document.body.appendChild(a);
+  a.click();
+
+  a.remove();
+
+  window.URL.revokeObjectURL(url);
 };

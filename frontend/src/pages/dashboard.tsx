@@ -27,32 +27,49 @@ import {
   CartesianGrid,
   Legend,
 } from "recharts";
-import { loadJSON } from "@/lib/storage";
 import type { Evaluation, ModelRun, ResultRow } from "./evaluations";
-import { STORAGE_KEY as EVAL_KEY } from "./evaluations";
-import { ArrowLeft, CheckCircle2, XCircle, ChevronLeft, ChevronRight } from "lucide-react";
-
+import {
+  ArrowLeft,
+  CheckCircle2,
+  XCircle,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
+import { getMetrics, type Metric } from "../api/metrics";
 
 const BRAND = "#FCC626";
 const INK = "#242627";
 
 // Palette for comparing multiple models (aligned with brand yellow).
-const MODEL_COLORS = ["#FCC626", "#2563EB", "#16A34A", "#C73B3C", "#7C3AED", "#0891B2", "#D97706", "#DB2777"];
+const MODEL_COLORS = [
+  "#FCC626",
+  "#2563EB",
+  "#16A34A",
+  "#C73B3C",
+  "#7C3AED",
+  "#0891B2",
+  "#D97706",
+  "#DB2777",
+];
 
 function DashboardPage() {
   const { evalId } = useParams({ from: "/_app/app/dashboard/$evalId" });
   const [ev, setEv] = useState<Evaluation | null>(null);
 
+  const [metrics, setMetrics] = useState<Metric[]>([]);
   useEffect(() => {
-    const all = loadJSON<Evaluation[]>(EVAL_KEY, []);
-    setEv(all.find((e) => e.id === evalId) ?? null);
+    if (!evalId) return;
+
+    getMetrics(Number(evalId)).then(setMetrics);
   }, [evalId]);
 
-  if (!ev) {
+  if (!metrics.length) {
     return (
       <div className="space-y-4">
         <BackButton />
-        <p className="text-sm text-muted-foreground">Avaliação não encontrada.</p>
+        <p className="text-sm text-muted-foreground">
+          Nenhuma métrica encontrada.
+        </p>
       </div>
     );
   }
@@ -62,7 +79,9 @@ function DashboardPage() {
     return (
       <div className="space-y-4">
         <BackButton />
-        <p className="text-sm text-muted-foreground">Esta avaliação ainda não foi concluída.</p>
+        <p className="text-sm text-muted-foreground">
+          Esta avaliação ainda não foi concluída.
+        </p>
       </div>
     );
   }
@@ -73,7 +92,8 @@ function DashboardPage() {
         <div className="min-w-0 space-y-1">
           <h1 className="text-2xl font-bold tracking-tight">{ev.name}</h1>
           <p className="text-sm text-muted-foreground">
-            {ev.datasetName} · {ev.evalType === "semantic" ? "Semântica" : "Determinística"} ·{" "}
+            {ev.datasetName} ·{" "}
+            {ev.evalType === "semantic" ? "Semântica" : "Determinística"} ·{" "}
             {new Date(ev.createdAt).toLocaleString()}
           </p>
         </div>
@@ -97,8 +117,12 @@ function DashboardPage() {
       </Card>
 
       {/* Per-model breakdown */}
-      {models.map((mr, i) => (
-        <ModelSection key={`${mr.provider}-${mr.model}-${i}`} mr={mr} accentColor={MODEL_COLORS[i % MODEL_COLORS.length]} />
+      {metrics.map((metric) => (
+        <ModelSection
+          key={metric.id}
+          metric={metric}
+          accentColor={MODEL_COLORS[i % MODEL_COLORS.length]}
+        />
       ))}
     </div>
   );
@@ -129,7 +153,8 @@ function ComparisonSection({ models }: { models: ModelRun[] }) {
       <div>
         <h2 className="text-lg font-semibold">Comparação entre modelos</h2>
         <p className="text-sm text-muted-foreground">
-          Visão geral do desempenho e custo dos {models.length} modelos avaliados.
+          Visão geral do desempenho e custo dos {models.length} modelos
+          avaliados.
         </p>
       </div>
 
@@ -154,15 +179,27 @@ function ComparisonSection({ models }: { models: ModelRun[] }) {
                   <TableCell className="font-medium">
                     <span
                       className="mr-2 inline-block h-2.5 w-2.5 rounded-full align-middle"
-                      style={{ background: MODEL_COLORS[i % MODEL_COLORS.length] }}
+                      style={{
+                        background: MODEL_COLORS[i % MODEL_COLORS.length],
+                      }}
                     />
                     <span className="font-mono text-xs">{mr.model}</span>
-                    <span className="ml-2 text-xs text-muted-foreground">({mr.providerName})</span>
+                    <span className="ml-2 text-xs text-muted-foreground">
+                      ({mr.providerName})
+                    </span>
                   </TableCell>
-                  <TableCell className="text-right tabular-nums">{pct(mr.metrics.accuracy)}</TableCell>
-                  <TableCell className="text-right tabular-nums">{pct(mr.metrics.precision)}</TableCell>
-                  <TableCell className="text-right tabular-nums">{pct(mr.metrics.recall)}</TableCell>
-                  <TableCell className="text-right tabular-nums">{pct(mr.metrics.f1)}</TableCell>
+                  <TableCell className="text-right tabular-nums">
+                    {pct(mr.metrics.accuracy)}
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums">
+                    {pct(mr.metrics.precision)}
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums">
+                    {pct(mr.metrics.recall)}
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums">
+                    {pct(mr.metrics.f1)}
+                  </TableCell>
                   <TableCell className="text-right tabular-nums">
                     {mr.metrics.correctItems}/{mr.metrics.totalItems}
                   </TableCell>
@@ -184,12 +221,18 @@ function ComparisonSection({ models }: { models: ModelRun[] }) {
           </CardHeader>
           <CardContent className="h-80">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={metricData} margin={{ top: 16, right: 12, left: -12, bottom: 0 }}>
+              <BarChart
+                data={metricData}
+                margin={{ top: 16, right: 12, left: -12, bottom: 0 }}
+              >
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e5e0" />
                 <XAxis dataKey="name" stroke={INK} fontSize={12} />
                 <YAxis stroke={INK} fontSize={12} domain={[0, 100]} />
                 <Tooltip
-                  contentStyle={{ borderRadius: 8, border: "1px solid #e5e5e0" }}
+                  contentStyle={{
+                    borderRadius: 8,
+                    border: "1px solid #e5e5e0",
+                  }}
                   formatter={(v: number) => `${v}%`}
                 />
                 <Legend wrapperStyle={{ fontSize: 12 }} />
@@ -214,14 +257,34 @@ function ComparisonSection({ models }: { models: ModelRun[] }) {
           </CardHeader>
           <CardContent className="h-80">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={tokenData} margin={{ top: 16, right: 12, left: -12, bottom: 0 }}>
+              <BarChart
+                data={tokenData}
+                margin={{ top: 16, right: 12, left: -12, bottom: 0 }}
+              >
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e5e0" />
                 <XAxis dataKey="name" stroke={INK} fontSize={11} />
                 <YAxis stroke={INK} fontSize={12} allowDecimals={false} />
-                <Tooltip contentStyle={{ borderRadius: 8, border: "1px solid #e5e5e0" }} />
+                <Tooltip
+                  contentStyle={{
+                    borderRadius: 8,
+                    border: "1px solid #e5e5e0",
+                  }}
+                />
                 <Legend wrapperStyle={{ fontSize: 12 }} />
-                <Bar dataKey="input" stackId="t" fill={BRAND} radius={[0, 0, 0, 0]} isAnimationActive={false} />
-                <Bar dataKey="output" stackId="t" fill="#242627" radius={[4, 4, 0, 0]} isAnimationActive={false} />
+                <Bar
+                  dataKey="input"
+                  stackId="t"
+                  fill={BRAND}
+                  radius={[0, 0, 0, 0]}
+                  isAnimationActive={false}
+                />
+                <Bar
+                  dataKey="output"
+                  stackId="t"
+                  fill="#242627"
+                  radius={[4, 4, 0, 0]}
+                  isAnimationActive={false}
+                />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
@@ -231,8 +294,8 @@ function ComparisonSection({ models }: { models: ModelRun[] }) {
   );
 }
 
-function ModelSection({ mr, accentColor }: { mr: ModelRun; accentColor: string }) {
-  const m = mr.metrics;
+function ModelSection({ metric }: { metric: Metric }) {
+  const m = metric.details_json;
   return (
     <section className="space-y-3 rounded-2xl border p-4">
       <div className="flex flex-wrap items-center gap-2">
@@ -240,9 +303,9 @@ function ModelSection({ mr, accentColor }: { mr: ModelRun; accentColor: string }
           className="inline-block h-3 w-3 rounded-full"
           style={{ background: accentColor }}
         />
-        <h2 className="text-lg font-semibold">{mr.model}</h2>
+        <h2 className="text-lg font-semibold">{metric.metric_type}</h2>
         <span className="text-xs text-muted-foreground">
-          {mr.providerName} · {mr.credentialLabel}
+          {metric.id} · {metric.id}
         </span>
       </div>
 
@@ -256,9 +319,19 @@ function ModelSection({ mr, accentColor }: { mr: ModelRun; accentColor: string }
       </div>
 
       <div className="grid gap-3 sm:grid-cols-3">
-        <MetricCard label="Input tokens" value={m.inputTokens.toLocaleString()} />
-        <MetricCard label="Output tokens" value={m.outputTokens.toLocaleString()} />
-        <MetricCard label="Total tokens" value={m.totalTokens.toLocaleString()} accent />
+        <MetricCard
+          label="Input tokens"
+          value={m.inputTokens.toLocaleString()}
+        />
+        <MetricCard
+          label="Output tokens"
+          value={m.outputTokens.toLocaleString()}
+        />
+        <MetricCard
+          label="Total tokens"
+          value={m.totalTokens.toLocaleString()}
+          accent
+        />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
@@ -280,21 +353,34 @@ function ModelSection({ mr, accentColor }: { mr: ModelRun; accentColor: string }
           <CardContent className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
-                data={buildHistogram(mr.results.map((r) => r.totalTokens), 10)}
+                data={buildHistogram(
+                  mr.results.map((r) => r.totalTokens),
+                  10,
+                )}
                 margin={{ top: 8, right: 12, left: -12, bottom: 0 }}
               >
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e5e0" />
                 <XAxis dataKey="label" stroke={INK} fontSize={11} />
                 <YAxis stroke={INK} fontSize={12} allowDecimals={false} />
-                <Tooltip contentStyle={{ borderRadius: 8, border: "1px solid #e5e5e0" }} />
-                <Bar dataKey="count" fill={accentColor} radius={[4, 4, 0, 0]} isAnimationActive={false} />
+                <Tooltip
+                  contentStyle={{
+                    borderRadius: 8,
+                    border: "1px solid #e5e5e0",
+                  }}
+                />
+                <Bar
+                  dataKey="count"
+                  fill={accentColor}
+                  radius={[4, 4, 0, 0]}
+                  isAnimationActive={false}
+                />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
       </div>
 
-      <ResultsTable results={mr.results} />
+      <ResultsTable results={metric.results} />
     </section>
   );
 }
@@ -309,7 +395,15 @@ function BackButton() {
   );
 }
 
-function MetricCard({ label, value, accent }: { label: string; value: string; accent?: boolean }) {
+function MetricCard({
+  label,
+  value,
+  accent,
+}: {
+  label: string;
+  value: string;
+  accent?: boolean;
+}) {
   return (
     <Card
       className={`rounded-2xl transition-shadow hover:shadow-sm ${
@@ -317,19 +411,27 @@ function MetricCard({ label, value, accent }: { label: string; value: string; ac
       }`}
     >
       <CardContent className="p-4">
-        <div className="text-xs uppercase tracking-wide text-muted-foreground">{label}</div>
+        <div className="text-xs uppercase tracking-wide text-muted-foreground">
+          {label}
+        </div>
         <div className="mt-1 text-2xl font-bold tabular-nums">{value}</div>
       </CardContent>
     </Card>
   );
 }
 
-function ConfusionMatrix({ confusion }: { confusion: { tp: number; fp: number; fn: number; tn: number } }) {
+function ConfusionMatrix({
+  confusion,
+}: {
+  confusion: { tp: number; fp: number; fn: number; tn: number };
+}) {
   const { tp, fp, fn, tn } = confusion;
   const max = Math.max(tp, fp, fn, tn, 1);
   const cell = (v: number, good: boolean) => {
     const intensity = 0.15 + 0.55 * (v / max);
-    const bg = good ? `rgba(22, 163, 74, ${intensity})` : `rgba(199, 59, 60, ${intensity})`;
+    const bg = good
+      ? `rgba(22, 163, 74, ${intensity})`
+      : `rgba(199, 59, 60, ${intensity})`;
     return (
       <div
         className="flex h-20 flex-col items-center justify-center rounded-md text-lg font-semibold tabular-nums"
@@ -342,14 +444,22 @@ function ConfusionMatrix({ confusion }: { confusion: { tp: number; fp: number; f
   return (
     <div className="grid grid-cols-[auto_1fr_1fr] gap-2 text-sm">
       <div />
-      <div className="text-center text-xs font-medium text-muted-foreground">Pred. Positivo</div>
-      <div className="text-center text-xs font-medium text-muted-foreground">Pred. Negativo</div>
+      <div className="text-center text-xs font-medium text-muted-foreground">
+        Pred. Positivo
+      </div>
+      <div className="text-center text-xs font-medium text-muted-foreground">
+        Pred. Negativo
+      </div>
 
-      <div className="flex items-center justify-end pr-2 text-xs font-medium text-muted-foreground">Real Positivo</div>
+      <div className="flex items-center justify-end pr-2 text-xs font-medium text-muted-foreground">
+        Real Positivo
+      </div>
       {cell(tp, true)}
       {cell(fn, false)}
 
-      <div className="flex items-center justify-end pr-2 text-xs font-medium text-muted-foreground">Real Negativo</div>
+      <div className="flex items-center justify-end pr-2 text-xs font-medium text-muted-foreground">
+        Real Negativo
+      </div>
       {cell(fp, false)}
       {cell(tn, true)}
     </div>
@@ -378,7 +488,8 @@ function buildHistogram(values: number[], bins: number) {
   }));
 }
 
-function pct(v: number) {
+function pct(v?: number) {
+  if (v === undefined || v === null || Number.isNaN(v)) return "-";
   return `${(v * 100).toFixed(1)}%`;
 }
 
@@ -391,14 +502,18 @@ function ResultsTable({ results }: { results: ResultRow[] }) {
     const q = query.trim().toLowerCase();
     if (!q) return results;
     return results.filter((r) =>
-      [r.pergunta, r.resposta_esperada, r.resposta_gerada]
-        .some((v) => v.toLowerCase().includes(q)),
+      [r.pergunta, r.resposta_esperada, r.resposta_gerada].some((v) =>
+        v.toLowerCase().includes(q),
+      ),
     );
   }, [results, query]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const currentPage = Math.min(page, totalPages);
-  const slice = filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  const slice = filtered.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize,
+  );
 
   return (
     <Card className="rounded-2xl">
@@ -423,7 +538,9 @@ function ResultsTable({ results }: { results: ResultRow[] }) {
             <TableHeader>
               <TableRow>
                 <TableHead className="min-w-[200px]">Pergunta</TableHead>
-                <TableHead className="min-w-[200px]">Resposta esperada</TableHead>
+                <TableHead className="min-w-[200px]">
+                  Resposta esperada
+                </TableHead>
                 <TableHead className="min-w-[200px]">Resposta gerada</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Input</TableHead>
@@ -434,16 +551,34 @@ function ResultsTable({ results }: { results: ResultRow[] }) {
             <TableBody>
               {slice.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center text-sm text-muted-foreground">
+                  <TableCell
+                    colSpan={7}
+                    className="text-center text-sm text-muted-foreground"
+                  >
                     Nenhum resultado.
                   </TableCell>
                 </TableRow>
               ) : (
                 slice.map((r, i) => (
                   <TableRow key={i}>
-                    <TableCell className="max-w-[280px] truncate" title={r.pergunta}>{r.pergunta}</TableCell>
-                    <TableCell className="max-w-[280px] truncate" title={r.resposta_esperada}>{r.resposta_esperada}</TableCell>
-                    <TableCell className="max-w-[280px] truncate" title={r.resposta_gerada}>{r.resposta_gerada}</TableCell>
+                    <TableCell
+                      className="max-w-[280px] truncate"
+                      title={r.pergunta}
+                    >
+                      {r.pergunta}
+                    </TableCell>
+                    <TableCell
+                      className="max-w-[280px] truncate"
+                      title={r.resposta_esperada}
+                    >
+                      {r.resposta_esperada}
+                    </TableCell>
+                    <TableCell
+                      className="max-w-[280px] truncate"
+                      title={r.resposta_gerada}
+                    >
+                      {r.resposta_gerada}
+                    </TableCell>
                     <TableCell>
                       {r.correct ? (
                         <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500 bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-800">
@@ -455,9 +590,15 @@ function ResultsTable({ results }: { results: ResultRow[] }) {
                         </span>
                       )}
                     </TableCell>
-                    <TableCell className="text-right font-mono tabular-nums">{r.inputTokens}</TableCell>
-                    <TableCell className="text-right font-mono tabular-nums">{r.outputTokens}</TableCell>
-                    <TableCell className="text-right font-mono tabular-nums font-medium">{r.totalTokens}</TableCell>
+                    <TableCell className="text-right font-mono tabular-nums">
+                      {r.inputTokens}
+                    </TableCell>
+                    <TableCell className="text-right font-mono tabular-nums">
+                      {r.outputTokens}
+                    </TableCell>
+                    <TableCell className="text-right font-mono tabular-nums font-medium">
+                      {r.totalTokens}
+                    </TableCell>
                   </TableRow>
                 ))
               )}
@@ -497,6 +638,5 @@ function ResultsTable({ results }: { results: ResultRow[] }) {
     </Card>
   );
 }
-
 
 export default DashboardPage;
