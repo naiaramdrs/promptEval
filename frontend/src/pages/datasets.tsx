@@ -20,6 +20,7 @@ import {
 import { Upload, Trash2, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { loadJSON, saveJSON } from "@/lib/storage";
+import { getDatasets, uploadDataset, deleteDataset } from "../api/datasets";
 
 export type DatasetItem = {
   id: string;
@@ -29,10 +30,10 @@ export type DatasetItem = {
 };
 
 export type Dataset = {
-  id: string;
+  id: number;
   name: string;
-  items: DatasetItem[];
-  createdAt: string;
+  format_name: string;
+  number_lines: number;
 };
 
 const STORAGE_KEY = "promptEval.datasets";
@@ -63,9 +64,14 @@ function DatasetsPage() {
   const [draft, setDraft] = useState<DatasetItem[]>([]);
   const [fileName, setFileName] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
+  const [file, setFile] = useState<File | null>(null);
 
   useEffect(() => {
-    setDatasets(loadJSON<Dataset[]>(STORAGE_KEY, []));
+    const fetchDatasets = async () => {
+      const datasets = await getDatasets();
+      setDatasets(datasets);
+    };
+    fetchDatasets();
   }, []);
 
   const persist = (next: Dataset[]) => {
@@ -74,6 +80,7 @@ function DatasetsPage() {
   };
 
   const onFile = async (file: File) => {
+    setFile(file);
     const text = await file.text();
     try {
       let items: DatasetItem[];
@@ -97,25 +104,26 @@ function DatasetsPage() {
     }
   };
 
-  const saveDataset = () => {
+  const saveDataset = async () => {
     if (!name || draft.length === 0) {
       toast.error("Faça upload de um arquivo e defina um nome");
       return;
     }
-    const ds: Dataset = {
-      id: uid(),
-      name,
-      items: draft,
-      createdAt: new Date().toISOString(),
-    };
-    persist([ds, ...datasets]);
+    await uploadDataset(file);
+    const updated = await getDatasets();
+    setDatasets(updated);
     setName("");
     setDraft([]);
     setFileName("");
     toast.success("Dataset cadastrado");
   };
 
-  const remove = (id: string) => persist(datasets.filter((d) => d.id !== id));
+  const remove = (id: number) => {
+    deleteDataset(id);
+    const updated = datasets.filter((d) => d.id !== id);
+    persist(updated);
+    toast.success("Dataset removido");
+  };
 
   return (
     <div className="space-y-6">
@@ -132,10 +140,6 @@ function DatasetsPage() {
           <CardDescription>Importe um arquivo CSV ou JSON contendo pergunta, contexto e resposta esperada.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="ds-name">Nome do dataset</Label>
-            <Input id="ds-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex.: QA Suporte v1" />
-          </div>
 
           <div className="space-y-2">
             <Label>Arquivo (CSV ou JSON)</Label>
@@ -146,6 +150,7 @@ function DatasetsPage() {
               className="hidden"
               onChange={(e) => {
                 const f = e.target.files?.[0];
+                console.log("onFile", f);
                 if (f) onFile(f);
                 e.target.value = "";
               }}
@@ -191,7 +196,7 @@ function DatasetsPage() {
                 <TableRow>
                   <TableHead>Nome</TableHead>
                   <TableHead>Itens</TableHead>
-                  <TableHead>Criado em</TableHead>
+                  <TableHead>Formato</TableHead>
                   <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
@@ -199,8 +204,8 @@ function DatasetsPage() {
                 {datasets.map((d) => (
                   <TableRow key={d.id}>
                     <TableCell className="font-medium">{d.name}</TableCell>
-                    <TableCell>{d.items.length}</TableCell>
-                    <TableCell>{new Date(d.createdAt).toLocaleString()}</TableCell>
+                    <TableCell>{d.number_lines}</TableCell>
+                    <TableCell>{d.format_name}</TableCell>
                     <TableCell className="text-right">
                       <Button size="sm" variant="ghost" onClick={() => remove(d.id)}>
                         <Trash2 className="h-4 w-4" />

@@ -138,6 +138,11 @@
     border-color: var(--color-border);
   }
 
+  html {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-background);
+  }
+
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);

@@ -34,13 +34,14 @@ import type { Dataset } from "./datasets";
 import type { ApiKey } from "./_app.app.api-keys";
 import type { Evaluation, EvalType, ModelRun, ResultRow } from "./evaluations";
 import { STORAGE_KEY as EVAL_KEY } from "./evaluations";
+import { getDatasets } from "../api/datasets";
 
 type ModelPick = { credentialId: string; model: string };
 
 function RunPage() {
   const [datasets, setDatasets] = useState<Dataset[]>([]);
   const [keys, setKeys] = useState<ApiKey[]>([]);
-  const [datasetId, setDatasetId] = useState("");
+  const [datasetId, setDatasetId] = useState(0);
   const [name, setName] = useState("");
   const [evalType, setEvalType] = useState<EvalType>("deterministic");
   const [picks, setPicks] = useState<ModelPick[]>([{ credentialId: "", model: "" }]);
@@ -51,7 +52,11 @@ function RunPage() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    setDatasets(loadJSON<Dataset[]>("promptEval.datasets", []));
+    const fetchDatasets = async () => {
+      const datasets = await getDatasets();
+      setDatasets(datasets);
+    };
+    fetchDatasets();
     setKeys(loadJSON<ApiKey[]>("promptEval.apiKeys", []));
   }, []);
 
@@ -150,7 +155,7 @@ function RunPage() {
                 ) : (
                   datasets.map((d) => (
                     <SelectItem key={d.id} value={d.id}>
-                      {d.name} ({d.items.length})
+                      {d.name} ({d.number_lines} itens)
                     </SelectItem>
                   ))
                 )}
