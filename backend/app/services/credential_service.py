@@ -26,7 +26,7 @@ def get_credential(credential_id: int, db: Session):
 
 
 def delete_credential(credential_id: int, db: Session):
-    credential = get_credential(credential_id, db)
+    credential = db.get(Credential, credential_id)
     if credential:
         db.delete(credential)
         db.commit()
