@@ -6,6 +6,7 @@ from app.api.routes import (
     user_routes,
 )
 from app.api.routes import credential_routes, dataset_routes, llm_routes, metrics_routes, providers_route
+from fastapi.middleware.cors import CORSMiddleware
 
 os.environ["GEMINI_API_KEY"] = os.getenv("GEMINI_API_KEY", "")
 
@@ -20,6 +21,16 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(lifespan=lifespan, title="Minha API com SQLModel")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:5173",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 app.include_router(dataset_routes.router, prefix="/api", tags=["Datasets"])
 app.include_router(credential_routes.router, prefix="/api", tags=["Credentials"])
