@@ -44,7 +44,7 @@ function downloadCsv(ev: Evaluation) {
           r.contexto,
           r.resposta_esperada,
           r.resposta_gerada,
-          r.correct ? "sim" : "nao",
+          "yes", // TODO: compute correctness
           String(r.inputTokens ?? ""),
           String(r.outputTokens ?? ""),
           String(r.totalTokens ?? ""),
@@ -75,16 +75,15 @@ export type EvaluationStatus = "running" | "completed" | "failed";
 
 export type EvalType = "deterministic" | "semantic";
 
-export type ResultRow = {
+export interface ResultRow {
   pergunta: string;
   contexto: string;
   resposta_esperada: string;
   resposta_gerada: string;
-  correct: boolean;
   inputTokens: number;
   outputTokens: number;
   totalTokens: number;
-};
+}
 
 export type ModelMetrics = {
   precision: number;

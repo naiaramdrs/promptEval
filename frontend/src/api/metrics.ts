@@ -1,36 +1,53 @@
+import type { ResultRow } from "../pages/evaluations";
 import { api } from "./client";
 
-export interface Metric {
-  id: number;
-  execution_config_id: number;
-  metric_type: string;
-  details_json: MetricDetails;
+export interface DashboardMetrics {
+  accuracy: number;
+
+  labels: string[];
+
+  confusion_matrix: number[][];
+
+  report: Record<
+    string,
+    {
+      precision: number;
+      recall: number;
+      "f1-score": number;
+      support: number;
+    }
+  >;
 }
 
-export interface MetricDetails {
-  accuracy?: number | undefined;
-  precision?: number;
-  recall?: number;
-  f1?: number;
+export interface DashboardModel {
+  executionConfigId: number;
 
-  inputTokens?: number;
-  outputTokens?: number;
-  totalTokens?: number;
+  modelName: string;
+  temperature: number;
 
-  totalItems?: number;
-  correctItems?: number;
+  inputTokens: number;
+  outputTokens: number;
+  totalTokens: number;
 
-  confusion?: {
-    tp: number;
-    fp: number;
-    fn: number;
-    tn: number;
-  };
+  metrics: DashboardMetrics;
+
+  results: ResultRow[];
 }
 
-export const getMetrics = async (
+export interface DashboardResponse {
+  experimentName: string;
+  datasetName: string;
+  evalType: string;
+  prompt: string;
+  createdAt: string;
+
+  models: DashboardModel[];
+}
+
+export const getDashboard = async (
   experimentId: number
-): Promise<Metric[]> => {
+): Promise<DashboardResponse> => {
   const { data } = await api.get(`/metrics/${experimentId}`);
+  console.log("Dashboard data:", data);
   return data;
 };

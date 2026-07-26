@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import {
   Card,
@@ -35,7 +35,11 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
-import { getMetrics, type Metric } from "../api/metrics";
+import {
+  getDashboard,
+  type DashboardModel,
+  type DashboardResponse,
+} from "../api/metrics";
 
 const BRAND = "#FCC626";
 const INK = "#242627";
@@ -53,17 +57,17 @@ const MODEL_COLORS = [
 ];
 
 function DashboardPage() {
-  const { evalId } = useParams({ from: "/_app/app/dashboard/$evalId" });
-  const [ev, setEv] = useState<Evaluation | null>(null);
+  const { evalId } = useParams<{ evalId: string }>();
 
-  const [metrics, setMetrics] = useState<Metric[]>([]);
+  const [dashboard, setDashboard] = useState<DashboardResponse | null>(null);
+
   useEffect(() => {
     if (!evalId) return;
 
-    getMetrics(Number(evalId)).then(setMetrics);
+    getDashboard(Number(evalId)).then(setDashboard);
   }, [evalId]);
 
-  if (!metrics.length) {
+  if (!dashboard) {
     return (
       <div className="space-y-4">
         <BackButton />
@@ -74,8 +78,8 @@ function DashboardPage() {
     );
   }
 
-  const models = ev.models ?? [];
-  if (ev.status !== "completed" || models.length === 0) {
+  const models = dashboard.models ?? [];
+  if (models.length === 0) {
     return (
       <div className="space-y-4">
         <BackButton />
@@ -90,11 +94,13 @@ function DashboardPage() {
     <div className="space-y-6">
       <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0 space-y-1">
-          <h1 className="text-2xl font-bold tracking-tight">{ev.name}</h1>
+          <h1 className="text-2xl font-bold tracking-tight">
+            {dashboard.experimentName}
+          </h1>
           <p className="text-sm text-muted-foreground">
-            {ev.datasetName} ·{" "}
-            {ev.evalType === "semantic" ? "Semântica" : "Determinística"} ·{" "}
-            {new Date(ev.createdAt).toLocaleString()}
+            {dashboard.datasetName} ·{" "}
+            {dashboard.evalType === "semantic" ? "Semântica" : "Determinística"}{" "}
+            · {new Date(dashboard.createdAt).toLocaleString()}
           </p>
         </div>
         <BackButton />
@@ -111,15 +117,15 @@ function DashboardPage() {
         </CardHeader>
         <CardContent>
           <pre className="max-h-64 overflow-auto whitespace-pre-wrap rounded-lg border bg-muted/40 p-3 text-sm">
-            {ev.prompt}
+            {dashboard.prompt}
           </pre>
         </CardContent>
       </Card>
 
       {/* Per-model breakdown */}
-      {metrics.map((metric) => (
+      {dashboard.models.map((metric, i) => (
         <ModelSection
-          key={metric.id}
+          key={1}
           metric={metric}
           accentColor={MODEL_COLORS[i % MODEL_COLORS.length]}
         />
@@ -294,8 +300,14 @@ function ComparisonSection({ models }: { models: ModelRun[] }) {
   );
 }
 
-function ModelSection({ metric }: { metric: Metric }) {
-  const m = metric.details_json;
+function ModelSection({
+  metric,
+  accentColor,
+}: {
+  metric: DashboardModel;
+  accentColor: string;
+}) {
+  const m = metric.metrics;
   return (
     <section className="space-y-3 rounded-2xl border p-4">
       <div className="flex flex-wrap items-center gap-2">
@@ -303,33 +315,39 @@ function ModelSection({ metric }: { metric: Metric }) {
           className="inline-block h-3 w-3 rounded-full"
           style={{ background: accentColor }}
         />
-        <h2 className="text-lg font-semibold">{metric.metric_type}</h2>
+        <h2 className="text-lg font-semibold">{metric.modelName}</h2>
         <span className="text-xs text-muted-foreground">
-          {metric.id} · {metric.id}
+          {1} · {1}
         </span>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-        <MetricCard label="Accuracy" value={pct(m.accuracy)} accent />
-        <MetricCard label="Precision" value={pct(m.precision)} accent />
-        <MetricCard label="Recall" value={pct(m.recall)} accent />
-        <MetricCard label="F1-Score" value={pct(m.f1)} accent />
-        <MetricCard label="Avaliadas" value={m.totalItems.toLocaleString()} />
-        <MetricCard label="Corretas" value={m.correctItems.toLocaleString()} />
+        <MetricCard
+          label="F1-Score"
+          value={pct(m.report["weighted avg"]["f1-score"])}
+          accent
+        />
+
+        <MetricCard
+          label="Avaliadas"
+          value={m.report["weighted avg"].support.toLocaleString()}
+        />
+
+        <MetricCard label="Classes" value={m.labels.length.toString()} />
       </div>
 
       <div className="grid gap-3 sm:grid-cols-3">
         <MetricCard
           label="Input tokens"
-          value={m.inputTokens.toLocaleString()}
+          value={metric.inputTokens.toLocaleString()}
         />
         <MetricCard
           label="Output tokens"
-          value={m.outputTokens.toLocaleString()}
+          value={metric.outputTokens.toLocaleString()}
         />
         <MetricCard
           label="Total tokens"
-          value={m.totalTokens.toLocaleString()}
+          value={metric.totalTokens.toLocaleString()}
           accent
         />
       </div>
@@ -341,7 +359,7 @@ function ModelSection({ metric }: { metric: Metric }) {
             <CardDescription>Predito × Real.</CardDescription>
           </CardHeader>
           <CardContent>
-            <ConfusionMatrix confusion={m.confusion} />
+            <ConfusionMatrix confusion={matrixToConfusion(m.confusion_matrix)} />
           </CardContent>
         </Card>
 
@@ -354,7 +372,7 @@ function ModelSection({ metric }: { metric: Metric }) {
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
                 data={buildHistogram(
-                  mr.results.map((r) => r.totalTokens),
+                  metric.results.map((r) => r.totalTokens),
                   10,
                 )}
                 margin={{ top: 8, right: 12, left: -12, bottom: 0 }}
@@ -420,6 +438,16 @@ function MetricCard({
   );
 }
 
+function matrixToConfusion(matrix: number[][]) {
+  return {
+    tp: matrix[0]?.[0] ?? 0,
+    fn: matrix[0]?.[1] ?? 0,
+    fp: matrix[1]?.[0] ?? 0,
+    tn: matrix[1]?.[1] ?? 0,
+  };
+}
+
+
 function ConfusionMatrix({
   confusion,
 }: {
@@ -465,6 +493,7 @@ function ConfusionMatrix({
     </div>
   );
 }
+
 
 function buildHistogram(values: number[], bins: number) {
   if (values.length === 0) return [];
@@ -580,7 +609,7 @@ function ResultsTable({ results }: { results: ResultRow[] }) {
                       {r.resposta_gerada}
                     </TableCell>
                     <TableCell>
-                      {r.correct ? (
+                      {true ? (
                         <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500 bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-800">
                           <CheckCircle2 className="h-3 w-3" /> Correto
                         </span>

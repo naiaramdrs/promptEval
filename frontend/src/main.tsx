@@ -13,6 +13,7 @@ import RunPage from './pages/experiments'
 import DatasetsPage from './pages/datasets'
 import EvaluationsPage from './pages/evaluations'
 import Route from './pages/app_index'
+import DashboardPage from './pages/dashboard'
 
 // 2. Configure as rotas
 const router = createBrowserRouter([
@@ -49,10 +50,9 @@ const router = createBrowserRouter([
         element: <EvaluationsPage />,
       },
       {
-        path: "",
-        element: <Route />,
-      }
-     
+        path: "dashboard/:evalId",
+        element: <DashboardPage />,
+      },
     ]
   }
 ])
