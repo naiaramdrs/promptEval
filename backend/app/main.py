@@ -5,7 +5,13 @@ from app.core.database import create_db_and_tables
 from app.api.routes import (
     user_routes,
 )
-from app.api.routes import credential_routes, dataset_routes, llm_routes, metrics_routes, providers_route
+from app.api.routes import (
+    credential_routes,
+    dataset_routes,
+    llm_routes,
+    metrics_routes,
+    providers_route,
+)
 from fastapi.middleware.cors import CORSMiddleware
 
 os.environ["GEMINI_API_KEY"] = os.getenv("GEMINI_API_KEY", "")
