@@ -15,7 +15,9 @@ class ExecutionConfig(SQLModel, table=True):
 class ExecutionResult(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     testcase_id: int = Field(foreign_key="testcase.id")
-    execution_config_id: int = Field(foreign_key="executionconfig.id", ondelete="CASCADE")
+    execution_config_id: int = Field(
+        foreign_key="executionconfig.id", ondelete="CASCADE"
+    )
     model_response: str
     prompt_tokens: int
     completion_tokens: int
