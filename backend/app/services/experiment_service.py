@@ -26,7 +26,7 @@ def list_experiments(db: Session):
 
 
 def delete_experiment(experiment_id: int, db: Session):
-    experiment = get_experiment(experiment_id, db)
+    experiment = db.get(Experiment, experiment_id)
     if experiment:
         db.delete(experiment)
         db.commit()

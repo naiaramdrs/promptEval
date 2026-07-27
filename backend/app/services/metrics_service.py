@@ -44,7 +44,7 @@ async def calculate_deterministic_metrics(
         "recall": report["weighted avg"]["recall"],
         "f1": report["weighted avg"]["f1-score"],
         "labels": labels,
-        "confusion": matrix.tolist(),
+        "confusion_matrix": matrix.tolist(),
         "report": report,
     }
 
