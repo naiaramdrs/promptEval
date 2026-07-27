@@ -14,18 +14,19 @@ from app.services.experiment_service import (
 from app.services.llm_service import create_execution_config, run_experiment
 from app.services.metrics_service import calculate_deterministic_metrics
 from app.services.prompt_service import create_prompt
+from app.enums.experiment_status import ExperimentStatus
 
 router = APIRouter()
 
 
 @router.post("/run")
 async def start_experiment(data: ExperimentCreate, db: Session = Depends(get_session)):
+    my_experiment = None
+
     try:
         my_experiment = create_experiment(data, db)
         prompt = create_prompt(data, my_experiment.id, db=db)
-        execution_config = create_execution_config(
-            data, my_experiment.id, prompt.id, db=db
-        )
+        execution_config = create_execution_config(data, my_experiment.id, prompt.id, db=db)
 
         results = await run_experiment(
             dataset_id=data.dataset_id,
@@ -43,19 +44,30 @@ async def start_experiment(data: ExperimentCreate, db: Session = Depends(get_ses
             db=db,
         )
 
+        my_experiment.status = ExperimentStatus.COMPLETED
+        db.add(my_experiment)
+        db.commit()
+
         return {
             "message": "Experimento concluído com sucesso!",
             "experiment_id": my_experiment.id,
             "execution_config_id": execution_config.id,
             "total_processed": len(results),
+            "code": 200,
+            "status": my_experiment.status.value,
         }
 
     except Exception as e:
         db.rollback()
-        traceback.print_exc()
-        print(e)
-        raise HTTPException(status_code=500, detail=str(e))
 
+        if my_experiment:
+            my_experiment.status = ExperimentStatus.FAILED
+            db.add(my_experiment)
+            db.commit()
+
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+    
 
 @router.get("/experiments")
 def list_all_experiments(db: Session = Depends(get_session)):

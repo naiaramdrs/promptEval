@@ -1,3 +1,5 @@
+from datetime import datetime, timezone
+
 from sqlmodel import JSON, Column, SQLModel, Field
 from typing import Optional
 
@@ -9,3 +11,4 @@ class Metrics(SQLModel, table=True):
     )
     metric_type: str
     details_json: dict = Field(sa_column=Column(JSON))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))

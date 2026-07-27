@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from typing import Optional
 
 from sqlmodel import SQLModel, Field
@@ -8,6 +9,7 @@ class Dataset(SQLModel, table=True):
     name: str
     format_name: str
     number_lines: int
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 class TestCase(SQLModel, table=True):

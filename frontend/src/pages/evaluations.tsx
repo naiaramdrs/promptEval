@@ -131,12 +131,29 @@ function EvaluationsPage() {
   const [experiments, setExperiments] = useState<Experiment[]>([]);
 
   useEffect(() => {
+    let interval: number;
+
     const fetchExperiments = async () => {
       const data = await getExperiments();
+
       setExperiments(data);
+
+      const hasRunning = data.some(
+        (experiment) => experiment.status === "running",
+      );
+
+      if (!hasRunning && interval) {
+        clearInterval(interval);
+      }
     };
 
     fetchExperiments();
+
+    interval = window.setInterval(fetchExperiments, 3000);
+
+    return () => {
+      clearInterval(interval);
+    };
   }, []);
 
   const remove = async (id: number) => {
@@ -145,7 +162,7 @@ function EvaluationsPage() {
     }
     await deleteExperiment(id);
     setExperiments((prev) => prev.filter((e) => e.id !== id));
-  }
+  };
 
   return (
     <div className="space-y-6">
@@ -198,7 +215,7 @@ function EvaluationsPage() {
                     <TableCell>{e.evaluation_type}</TableCell>
 
                     <TableCell>
-                      <StatusBadge status={"completed"} />
+                      <StatusBadge status={e.status} />
                     </TableCell>
 
                     <TableCell className="text-right">

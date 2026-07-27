@@ -13,6 +13,7 @@ export type Experiment = {
   name: string;
   dataset_id: number;
   evaluation_type: string;
+  status: EvaluationStatus;
   created_at: string;
 };
 
@@ -23,6 +24,7 @@ export type RunExperimentResponse = {
   total_processed: number;
 };
 
+import type { EvaluationStatus } from "../pages/evaluations";
 import { api } from "./client";
 
 export const runExperiment = async (
