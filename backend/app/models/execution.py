@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from typing import Optional
 
 from sqlmodel import SQLModel, Field
@@ -10,6 +11,7 @@ class ExecutionConfig(SQLModel, table=True):
     prompt_id: int = Field(foreign_key="prompt.id")
     model_name: str
     temperature: float
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 class ExecutionResult(SQLModel, table=True):
