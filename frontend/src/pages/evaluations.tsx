@@ -1,6 +1,11 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "../components/ui/card";
 import {
   Table,
   TableBody,
@@ -8,14 +13,15 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
+} from "../components/ui/table";
+import { Button } from "../components/ui/button";
 import {
   getExperiments,
   deleteExperiment,
   type Experiment,
-} from "@/api/experiments";
+} from "../api/experiments";
 import { downloadDataset } from "../api/datasets";
+import { Trash2 } from "lucide-react";
 
 function csvEscape(v: string) {
   const s = String(v ?? "");
@@ -95,7 +101,7 @@ export type ModelMetrics = {
   outputTokens: number;
   totalItems: number;
   correctItems: number;
-  confusion: { tp: number; fp: number; fn: number; tn: number };
+  confusion_matrix: { tp: number; fp: number; fn: number; tn: number };
 };
 
 export type ModelRun = {
@@ -133,6 +139,14 @@ function EvaluationsPage() {
     fetchExperiments();
   }, []);
 
+  const remove = async (id: number) => {
+    if (!window.confirm("Tem certeza que deseja excluir esta avaliação?")) {
+      return;
+    }
+    await deleteExperiment(id);
+    setExperiments((prev) => prev.filter((e) => e.id !== id));
+  }
+
   return (
     <div className="space-y-6">
       <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -164,6 +178,7 @@ function EvaluationsPage() {
                   <TableHead>Experimento</TableHead>
                   <TableHead>Dataset</TableHead>
                   <TableHead>Tipo</TableHead>
+                  <TableHead>Status</TableHead>
                   <TableHead>Ações</TableHead>
                 </TableRow>
               </TableHeader>
@@ -182,6 +197,10 @@ function EvaluationsPage() {
 
                     <TableCell>{e.evaluation_type}</TableCell>
 
+                    <TableCell>
+                      <StatusBadge status={"completed"} />
+                    </TableCell>
+
                     <TableCell className="text-right">
                       <div className="flex justify-start gap-2">
                         <Button asChild size="sm" variant="outline">
@@ -199,6 +218,13 @@ function EvaluationsPage() {
                           }
                         >
                           Baixar CSV
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => remove(e.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
                     </TableCell>

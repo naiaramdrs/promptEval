@@ -112,8 +112,7 @@ function DashboardPage() {
       {/* Prompt */}
       <Card className="rounded-2xl">
         <CardHeader>
-          <CardTitle className="text-base">Prompt utilizado</CardTitle>
-          <CardDescription>Prompt enviado a todos os modelos.</CardDescription>
+          <CardTitle className="text-base">Prompt</CardTitle>
         </CardHeader>
         <CardContent>
           <pre className="max-h-64 overflow-auto whitespace-pre-wrap rounded-lg border bg-muted/40 p-3 text-sm">
@@ -308,6 +307,7 @@ function ModelSection({
   accentColor: string;
 }) {
   const m = metric.metrics;
+  console.log("Model metrics:", m);
   return (
     <section className="space-y-3 rounded-2xl border p-4">
       <div className="flex flex-wrap items-center gap-2">
@@ -316,24 +316,13 @@ function ModelSection({
           style={{ background: accentColor }}
         />
         <h2 className="text-lg font-semibold">{metric.modelName}</h2>
-        <span className="text-xs text-muted-foreground">
-          {1} · {1}
-        </span>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-        <MetricCard
-          label="F1-Score"
-          value={pct(m.report["weighted avg"]["f1-score"])}
-          accent
-        />
-
-        <MetricCard
-          label="Avaliadas"
-          value={m.report["weighted avg"].support.toLocaleString()}
-        />
-
-        <MetricCard label="Classes" value={m.labels.length.toString()} />
+        <MetricCard label="Accuracy" value={Number(m.accuracy).toFixed(1)} />
+        <MetricCard label="Precision" value={Number(m.precision).toFixed(1)} />
+        <MetricCard label="Recall" value={Number(m.recall).toFixed(1)} />
+        <MetricCard label="F1-Score" value={Number(m.f1).toFixed(1)} accent />
       </div>
 
       <div className="grid gap-3 sm:grid-cols-3">
@@ -359,41 +348,9 @@ function ModelSection({
             <CardDescription>Predito × Real.</CardDescription>
           </CardHeader>
           <CardContent>
-            <ConfusionMatrix confusion={matrixToConfusion(m.confusion_matrix)} />
-          </CardContent>
-        </Card>
-
-        <Card className="rounded-2xl">
-          <CardHeader>
-            <CardTitle className="text-base">Distribuição de tokens</CardTitle>
-            <CardDescription>Total por resposta.</CardDescription>
-          </CardHeader>
-          <CardContent className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                data={buildHistogram(
-                  metric.results.map((r) => r.totalTokens),
-                  10,
-                )}
-                margin={{ top: 8, right: 12, left: -12, bottom: 0 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" stroke="#e5e5e0" />
-                <XAxis dataKey="label" stroke={INK} fontSize={11} />
-                <YAxis stroke={INK} fontSize={12} allowDecimals={false} />
-                <Tooltip
-                  contentStyle={{
-                    borderRadius: 8,
-                    border: "1px solid #e5e5e0",
-                  }}
-                />
-                <Bar
-                  dataKey="count"
-                  fill={accentColor}
-                  radius={[4, 4, 0, 0]}
-                  isAnimationActive={false}
-                />
-              </BarChart>
-            </ResponsiveContainer>
+            <ConfusionMatrix
+              confusion_matrix={matrixToConfusion(m.confusion_matrix)}
+            />
           </CardContent>
         </Card>
       </div>
@@ -447,13 +404,13 @@ function matrixToConfusion(matrix: number[][]) {
   };
 }
 
-
 function ConfusionMatrix({
-  confusion,
+  confusion_matrix,
 }: {
-  confusion: { tp: number; fp: number; fn: number; tn: number };
+  confusion_matrix: { tp: number; fp: number; fn: number; tn: number };
 }) {
-  const { tp, fp, fn, tn } = confusion;
+  const { tp, fp, fn, tn } = confusion_matrix;
+  console.log("Confusion matrix:", confusion_matrix);
   const max = Math.max(tp, fp, fn, tn, 1);
   const cell = (v: number, good: boolean) => {
     const intensity = 0.15 + 0.55 * (v / max);
@@ -493,7 +450,6 @@ function ConfusionMatrix({
     </div>
   );
 }
-
 
 function buildHistogram(values: number[], bins: number) {
   if (values.length === 0) return [];
@@ -609,6 +565,7 @@ function ResultsTable({ results }: { results: ResultRow[] }) {
                       {r.resposta_gerada}
                     </TableCell>
                     <TableCell>
+                      {/* ajeitar */}
                       {true ? (
                         <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500 bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-800">
                           <CheckCircle2 className="h-3 w-3" /> Correto

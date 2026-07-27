@@ -1,14 +1,14 @@
 import { useEffect, useRef, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Button } from "../components/ui/button";
+import { Input } from "../components/ui/input";
+import { Label } from "../components/ui/label";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
+} from "../components/ui/card";
 import {
   Table,
   TableBody,
@@ -16,10 +16,10 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
+} from "../components/ui/table";
 import { Upload, Trash2, FileText } from "lucide-react";
 import { toast } from "sonner";
-import { loadJSON, saveJSON } from "@/lib/storage";
+import { loadJSON, saveJSON } from "../lib/storage";
 import { getDatasets, uploadDataset, deleteDataset } from "../api/datasets";
 
 export type DatasetItem = {

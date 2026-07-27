@@ -3,7 +3,9 @@ import { api } from "./client";
 
 export interface DashboardMetrics {
   accuracy: number;
-
+  f1: number;
+  precision: number;
+  recall: number;
   labels: string[];
 
   confusion_matrix: number[][];
